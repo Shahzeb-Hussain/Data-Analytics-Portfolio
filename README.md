@@ -1,70 +1,74 @@
-# E-Commerce Dashboard
+# Sales & Promotion Competitive Intelligence Dashboard
 
 ## Problem Statement
 
-This dashboard helps e-commerce management and operational teams better understand their sales dynamics, revenue drivers, and margin profitability. By converting fragmented enterprise operational data into unified visual insights, business leadership can quickly identify top-performing product categories, key customer segments, and regional market trends.
+This dashboard helps the business understand how sales, profit, and discounting are performing across customers, products, and promotions. It brings together order-level transactions with customer, product, and promotion details so that the team can quickly see which products and promotions are driving (or dragging down) revenue and profit, where customers are located, and how sales trends move over time.
 
-Through dynamic cross-filtering and key metric tracking, stakeholders can pinpoint cost bottlenecks, evaluate promotional marketing impact, and optimize discount strategies to maximize overall profitability.
+By comparing Top 5 vs Bottom 5 products on sales, quantity, and profit side by side, the business can identify which items to double down on and which to re-price, bundle, or discontinue. The Comparison and Edit Interactions pages also make it possible to slice Total Sales, Total Profit, and Total Quantity Sold by date, customer, product, and promotion, so cross-filtering behavior can be controlled per visual.
 
-Since operational margins and campaign performance vary across geographic regions, this report provides the visibility required to isolate underperforming market zones and strategically allocate resources.
+## Data Model
 
----
+The report is built on a star-schema style model with one fact table and several supporting dimension/date tables:
 
-## Steps Followed
+- **Fact Table** — the core transaction table: `Order ID`, `CustomerID`, `Product ID`, `PromotionID`, `Date (dd/mm/yyyy)`, `Year`, `Net Sales`, `Total Sales`, `Profit`, `Discount Percentage`, `Discount Value`, `Price Per Unit (INR)`, `Units Sold`
+- **Dim Customers** — `CustomerID`, `Customer Name`, `City`
+- **Dim Product** — `Product ID`, `Product Name`
+- **Dim Promotion** — `PromotionID`, `Promotion Name`
+- **Date Table 2** / **Data Table 1** — supporting date dimensions used to drive the slicers and the Sales Trend line chart
+- **Measures Table** — a dedicated table holding key DAX measures (e.g. `Quantity sold`, `Total Measure`) so they're kept separate from the raw data tables
 
-* **Step 1:** Load raw enterprise sales, product, customer, and regional datasets into Power BI Desktop (from CSV / SQL sources).
-* **Step 2:** Open Power Query Editor to inspect data quality using the "Column distribution", "Column quality", and "Column profile" options under the View tab.
-* **Step 3:** Enable "Column profiling based on entire dataset" to ensure data integrity across large tables.
-* **Step 4:** Address missing values and duplicate rows across key dimension tables.
-* **Step 5:** Establish a relational data model (Star Schema) in the Model View, linking the core central fact table (`Sales_Fact`) to lookup dimension tables (`Product_Dim`, `Customer_Dim`, `Geography_Dim`, and `Promotion_Dim`).
-* **Step 6:** Configure relationships (1-to-many) between fact and dimension tables, ensuring appropriate cross-filtering behavior.
-* **Step 7:** Apply a custom color theme in the Report View under the View tab for consistent styling and legibility.
-* **Step 8:** Add interactive visual filters (Slicers) for core categorical attributes: Region, Product Category, Customer Segment, and Promotion Offer.
-* **Step 9:** Add Executive KPI Card visuals to the canvas to summarize key business totals: Total Revenue, Total Profit Margin, Total Units Sold, and Average Order Value (AOV).
-* **Step 10:** Create bar and column charts to display profit margins and revenue distribution across Product Category and Customer Segment.
-* **Step 11:** Implement dynamic Map Visuals to project regional sales distribution.
-* **Step 12:** Add custom DAX measures for dynamic business aggregations and logic:
+### Steps followed
 
-  *Total Revenue Measure:*
-  ```dax
-  Total Revenue = SUM(Sales_Fact[SalesAmount])
-  ```
- *Total Profit Measure:*
-  ```dax
-  Total Profit = SUM(Sales_Fact[Profit])
-  ```
- *Profit Margin Percentage Measure:*
-  ```dax
-  Profit Margin % = DIVIDE([Total Profit], [Total Revenue], 0)
-  ```
-* **Step 13:** Create a Calculated Column to segment inventory into distinct price tier brackets:
+- **Step 1**: Loaded the order/transaction data into Power BI Desktop and built out the star schema — Fact Table connected to Dim Customers, Dim Product, and Dim Promotion via their respective keys (`CustomerID`, `Product ID`, `PromotionID`), plus a date table for time intelligence.
+- **Step 2**: Created a dedicated **Measures Table** to hold the report's core DAX measures separately from the data tables, keeping the field list clean.
+- **Step 3**: Built key measures such as `Total Sales`, `Sum of Net Sales`, `Total Profit`, and `Quantity sold` (aggregations of `Sales`, `Net Sales`, `Profit`, and `Units Sold` from the Fact Table).
+- **Step 4**: Selected a report theme (theme pack: `CY26SU05`) under the View tab for consistent styling across all pages.
+- **Step 5**: Built the **Overview** page with:
+  - A line chart — *Sales Trends by Period* (Net Sales by Year)
+  - A scatter chart — *Profit V/S Net Sales*
+  - A bar chart — *Average Discount by Promotion Categories*
+  - A map visual plotting customers by `City`
+  - A card visual summarizing order activity
+- **Step 6**: Built the **Top/Bottom 5 Analysis** page with three matched pairs of bar charts:
+  - Top 5 / Bottom 5 Products by Sales
+  - Top 5 / Bottom 5 Products by Quantity
+  - Top 5 / Bottom 5 Products by Profit
+- **Step 7**: Built the **Comparison Sales/Profit/Quantity** page with two slicers plus clustered column charts for Total Sales, Total Profit, and Total Quantity Sold, so the business can compare all three metrics side by side under the same filter context.
+- **Step 8**: Built an **Edit Interactions** page with two sets of slicers and matching bar charts (Total Sales, Total Profit, Total Quantity Sold) to demonstrate/control how one visual's selection filters — or doesn't filter — the others (Format > Edit Interactions).
+- **Step 9**: Built a detailed **Table Visual** page combining `CustomerID`, `Date`, `Order ID`, `Product ID`, `PromotionID`, `Discount Percentage`, `Discount Value`, `Net Sales`, `Price Per Unit (INR)`, `Profit`, and `Units Sold` into a single drillable table, filterable by Date, Customer Name, Product Name, and Promotion Name slicers.
+- **Step 10**: Published the report to Power BI Service.
 
-  ```dax
-  Price Tier = 
-  IF(Product_Dim[UnitPrice] <= 50, "Low-Tier (<= $50)",
-  IF(Product_Dim[UnitPrice] <= 200, "Mid-Tier ($51-$200)",
-  IF(Product_Dim[UnitPrice] <= 500, "High-Tier ($201-$500)",
-  "Premium (> $500)")))
-  ```
-Insights
-Key inferences derived from the analytics model include:
-
-
-
-Key inferences derived from the analytics model include:
 ## Insights
 
-### [1] Core Sales & Margin Metrics
-* **Total Revenue Generated:** $1,803,191
-* **Overall Profit Margin:** 23.3%
-* **Total Orders Processed:** 3,510
-* High-volume categories account for the largest share of gross sales, while specific mid-tier product groups yield higher net profit margins.
+*(Numbers below are placeholders — pull the current values straight from your published dashboard, since they'll shift as filters/slicers are applied.)*
 
-### [2] Customer Segment Performance
-* **Consumer Segment:** Contributes the largest revenue volume
- (51.2% of total sales).
-* **Corporate / Small Business Segment:** Generates higher average order values (AOV) and stronger profit margins per transaction.
+### Sales & Profit
 
-### [3] Regional & Promotional Insights
-* **Regional Distribution:** Spatial analysis indicates top performance in core urban regions, while specific outlying zones exhibit lower margins due to elevated discount rates.
-* **Promotional Impact:** Campaign conversion analysis demonstrates that target promotions significantly boost short-term volume, though heavy discounting requires monitoring to prevent margin erosion.
+- Total Sales: `[₹12,20,00,000]`
+- Total Profit: `[₹1,22,00,000]`
+- Total Quantity Sold: `[₹7,100]`
+
+### Products
+
+- Top 5 products by Sales: `[Apple iPhone 14, Apple MacBook air, Sony Bravia 55" TV, Samsung Galaxy S21 and HP Pavillion Laptop]`
+- Bottom 5 products by Sales: `[TupperWare Lunch Box, L'Oreal Shampoo, Nivea Body Lotion, Dove Soap Pack and Colgate Toothpaste]`
+- Top 5 products by Profit: `Apple iPhone 14, Apple MacBook air, Sony Bravia 55" TV, Samsung Galaxy S21 and HP Pavillion Laptop]`
+- Bottom 5 products by Profit: `[Nivea Bodylotion, Tuppware Lunch Box, Milton Thermas Flask, FabIndia Kurta and Borosil Glass Set]`
+
+### Promotions
+
+- Average discount by promotion category highlights which promotions are eroding margin the most vs. driving volume without heavy discounting — see the *Average Discount by Promotion Categories* chart on the Overview page.
+
+### Customers & Geography
+
+- Customer locations are plotted on the map visual (by `City`), making it easy to spot regional concentration of orders.
+
+### Trend
+
+- The *Sales Trends by Period* line chart (Net Sales by Year) shows the overall trajectory of sales — use this to flag any year-over-year decline or growth to investigate further.
+
+## Tech Stack
+
+- Power BI Desktop / Power BI Service
+- DAX (measures for Total Sales, Total Profit, Quantity Sold)
+- Star-schema data modeling (Fact + Dimension tables)
